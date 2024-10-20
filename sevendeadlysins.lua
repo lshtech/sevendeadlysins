@@ -396,6 +396,115 @@ local pride = SMODS.Joker{
 	end,
 }
 
+if JokerDisplay then
+    local jd_def = JokerDisplay.Definitions
+
+    jd_def['j_7sins_lust'] = {
+        text = {
+            { text = "+" },
+            { ref_table = "card.joker_display_values", ref_value = "chips", retrigger_type = "mult" }
+        },
+        text_config = { colour = G.C.CHIPS },
+        calc_function = function(card)
+            local _, _, scoring_hand = JokerDisplay.evaluate_hand()
+            local chips = 0
+            local king = false
+            local queen = false
+            for _, scoring_card in pairs(scoring_hand) do
+                if scoring_card:get_id() and scoring_card:get_id() == 12 then
+                    queen = true
+                elseif scoring_card:get_id() and scoring_card:get_id() == 13 then
+                    king = true
+                end
+            end
+            if king and queen then
+                chips = card.ability.extra.chips
+            end
+            card.joker_display_values.dollars = chips
+        end
+    }
+    jd_def['j_7sins_gluttony'] = {
+        text = {
+            { text = "+" },
+            { ref_table = "card.ability.extra", ref_value = "chips", retrigger_type = "mult" }
+        },
+        text_config = { colour = G.C.CHIPS },
+    }
+    jd_def['j_7sins_greed'] = {
+        text = {
+            {
+                border_nodes = {
+                    { text = 'X'},
+                    { ref_table = 'card.joker_display_values', ref_value = 'Xmult', retrigger_type = 'exp' },
+                }
+            }
+        },
+        calc_function = function(card)
+            local greed_mult = math.floor((G.GAME.dollars + (G.GAME.dollar_buffer or 0))/card.ability.extra.dollars)
+            card.joker_display_values.Xmult = 1 + card.ability.extra.xmult * greed_mult
+        end
+    }
+    jd_def['j_7sins_sloth'] = {
+        text = {
+            {
+                border_nodes = {
+                    { text = 'X'},
+                    { ref_table = 'card.ability.extra', ref_value = 'xmult', retrigger_type = 'exp' },
+                }
+            }
+        },
+    }
+    jd_def['j_7sins_envy'] = {
+        text = {
+            { text = "+" },
+            { ref_table = "card.joker_display_values", ref_value = "mult", retrigger_type = "mult" }
+        },
+        text_config = { colour = G.C.MULT },
+        calc_function = function(card)
+            local min_rank = 11;
+            local max_rank = 0;
+            local _, _, scoring_hand = JokerDisplay.evaluate_hand()
+            for _, v in pairs(scoring_hand) do
+                if v.ability.effect ~= 'Stone Card' then
+                    if v.base.nominal > max_rank then
+                        max_rank = v.base.nominal;
+                    end
+                    if v.base.nominal <= min_rank then
+                        min_rank = v.base.nominal;
+                    end
+                end
+            end
+            local diff = max_rank - min_rank;
+            card.joker_display_values.mult = diff * card.ability.extra.mult
+        end
+    }
+    jd_def['j_7sins_pride'] = {
+        text = {
+            { text = "+" },
+            { ref_table = "card.joker_display_values", ref_value = "mult", retrigger_type = "mult" }
+        },
+        text_config = { colour = G.C.MULT },
+        calc_function = function(card)
+            local mult = 0
+            if G.jokers then
+                for _,v in pairs(G.jokers.cards) do
+                    local score = 0
+                    if v ~= card then
+                        local rarity = v.config.center.rarity;
+                        if rarity == 1 then score = 2
+                        elseif rarity == 2 then score = 4
+                        elseif rarity == 3 then score = 8
+                        elseif rarity == 4 then score = 16
+                        end
+                        mult = mult + score
+                    end
+                end
+            end
+            card.joker_display_values.mult = mult
+        end
+    }
+end
+
 local sin_jokers = { 'j_7sins_lust', 'j_7sins_gluttony', 'j_7sins_greed', 'j_7sins_wrath', 'j_7sins_sloth', 'j_7sins_envy', 'j_7sins_pride' };
 
 local function deepcopy(o, seen)
